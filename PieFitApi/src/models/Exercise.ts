@@ -1,5 +1,5 @@
 import { model, models, Schema } from "mongoose";
-import type { InferSchemaType } from "mongoose";
+import type { InferSchemaType, Model } from "mongoose";
 
 const exerciseSchema = new Schema(
   {
@@ -40,5 +40,10 @@ exerciseSchema.index({ name: 1 });
 
 export type Exercise = InferSchemaType<typeof exerciseSchema>;
 
-export const ExerciseModel =
-  models.Exercise ?? model<Exercise>("Exercise", exerciseSchema);
+const existingExerciseModel = models.Exercise as
+  | Model<Exercise>
+  | undefined;
+
+export const ExerciseModel: Model<Exercise> =
+  existingExerciseModel ??
+  model<Exercise>("Exercise", exerciseSchema);
