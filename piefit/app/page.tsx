@@ -1,6 +1,26 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { getExercises, type Exercise } from "@/services/exerciseService";
 
 export default function Home() {
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getExercises()
+      .then(setExercises)
+      .catch((requestError: unknown) => {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Não foi possível carregar os exercícios.",
+        );
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen items-center bg-zinc-100 dark:bg-zinc-950 font-sans p-6 text-zinc-900 dark:text-zinc-100">
       <header className="w-full max-w-4xl mb-8 text-center">
@@ -9,202 +29,54 @@ export default function Home() {
         </h1>
       </header>
 
-      <section className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card de Segunda-feira */}
-        <div className="flex flex-col w-full md:w-fit bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-          <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400 border-b border-zinc-100 dark:border-zinc-800 pb-2">
-            Segunda-feira
-          </h2>
-          <ul className="space-y-2 text-zinc-700 dark:text-zinc-300 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Rosca inclinada com halteres no banco a 45°
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Rosca direta no cabo
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Crucifixo reto
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Supino inclinado com halteres
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Supino declinado com halteres
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Elevação lateral
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Elevação frontal com corda
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Desenvolvimento sentado com halteres
-            </li>
-          </ul>
-        </div>
+      <section className="w-full max-w-4xl">
+        {isLoading && (
+          <p role="status" className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+            Carregando exercícios...
+          </p>
+        )}
 
+        {error && (
+          <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+            {error}
+          </p>
+        )}
 
-        <div className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow opacity-60">
-          <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400 border-b border-zinc-100 dark:border-zinc-800 pb-2">
-            Terça-feira
-          </h2>
-          <ul className="space-y-2 text-zinc-700 dark:text-zinc-300 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Triceps livre na barra
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Triceps testa no banco com corda
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Triceps francês no cabo com banco a 90°
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Levantamento terra com barra
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Remada unilateral com halteres
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Pulley frente com a pegada fechada
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Remada baixa no triângulo
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Crucifixo inverso
-            </li>
-          </ul>
-        </div>
+        {!isLoading && !error && exercises.length === 0 && (
+          <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+            Nenhum exercício cadastrado ainda.
+          </p>
+        )}
 
-        <div className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow opacity-60">
-          <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400 border-b border-zinc-100 dark:border-zinc-800 pb-2">
-            Quarta-feira
-          </h2>
-
-          <ul className="space-y-2 text-zinc-700 dark:text-zinc-300 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Agachamentos frontais
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Leg press
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Cadeira flexora
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Stiff
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Cadeira extensora
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Posterior em pé/deitado
-            </li>
-          </ul>
-        </div>
-
-        <div className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow opacity-60">
-          <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400 border-b border-zinc-100 dark:border-zinc-800 pb-2">
-            Sexta-feira
-          </h2>
-
-          <ul className="space-y-2 text-zinc-700 dark:text-zinc-300 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Abdominal infra
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Abdominal supra
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Ombro à escolha
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Peito à escolha
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Peito à escolha
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Costas à escolha
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Antebraço
-            </li>
-          </ul>
-        </div>
-
-        <div className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow opacity-60">
-          <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400 border-b border-zinc-100 dark:border-zinc-800 pb-2">
-            Donmingo
-          </h2>
-
-          <ul className="space-y-2 text-zinc-700 dark:text-zinc-300 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Agachamento livre
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Quadríceps à escolha
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Posterior à escolha
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Glúteo
-            </li>
-
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Panturrilha à escolha
-            </li>
-          </ul>
-        </div>
+        {!isLoading && !error && exercises.length > 0 && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {exercises.map((exercise) => (
+              <article
+                key={exercise._id}
+                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <h2 className="mb-3 border-b border-zinc-100 pb-2 text-xl font-bold text-blue-600 dark:border-zinc-800 dark:text-blue-400">
+                  {exercise.name}
+                </h2>
+                {exercise.description && (
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                    {exercise.description}
+                  </p>
+                )}
+                {exercise.muscleGroups.length > 0 && (
+                  <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                    Grupos musculares: {exercise.muscleGroups.join(", ")}
+                  </p>
+                )}
+                {exercise.equipment && (
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    Equipamento: {exercise.equipment}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
