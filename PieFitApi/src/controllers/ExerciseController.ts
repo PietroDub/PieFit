@@ -54,7 +54,7 @@ export default class ExerciseController {
       const updatedExercise = await ExerciseModel.findByIdAndUpdate(
         req.params.id,
         req.body,
-        { new: true },
+        { new: true, runValidators: true },
       );
 
       if (!updatedExercise) {

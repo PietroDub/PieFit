@@ -8,3 +8,5 @@ exerciseRoutes.get("/:id", ExerciseController.getExerciseById);
 exerciseRoutes.post("/", ExerciseController.createExercise);
 exerciseRoutes.put("/:id", ExerciseController.updateExercise);
 exerciseRoutes.delete("/:id", ExerciseController.deleteExercise);
+
+export default exerciseRoutes;

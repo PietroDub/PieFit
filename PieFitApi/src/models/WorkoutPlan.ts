@@ -1,5 +1,5 @@
 import { model, models, Schema } from "mongoose";
-import type { InferSchemaType } from "mongoose";
+import type { InferSchemaType, Model } from "mongoose";
 
 import { WEEKDAYS } from "../constants/weekdays.js";
 
@@ -104,5 +104,10 @@ const workoutPlanSchema = new Schema(
 
 export type WorkoutPlan = InferSchemaType<typeof workoutPlanSchema>;
 
-export const WorkoutPlanModel =
-  models.WorkoutPlan ?? model<WorkoutPlan>("WorkoutPlan", workoutPlanSchema);
+const existingWorkoutPlanModel = models.WorkoutPlan as
+  | Model<WorkoutPlan>
+  | undefined;
+
+export const WorkoutPlanModel: Model<WorkoutPlan> =
+  existingWorkoutPlanModel ??
+  model<WorkoutPlan>("WorkoutPlan", workoutPlanSchema);
