@@ -1,5 +1,7 @@
-import { model, models, Schema } from "mongoose";
+import mongoose from "mongoose";
 import type { InferSchemaType, Model } from "mongoose";
+
+const { model, models, Schema } = mongoose;
 
 const exerciseSchema = new Schema(
   {

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { sendError } from "../http/sendError.js";
 import { ExerciseModel } from "../models/Exercise.js";
 
 export default class ExerciseController {
@@ -9,10 +10,7 @@ export default class ExerciseController {
 
       return res.status(200).json(exercises);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error fetching exercises",
-        error,
-      });
+      return sendError(res, error, "Error fetching exercises");
     }
   }
 
@@ -28,10 +26,7 @@ export default class ExerciseController {
 
       return res.status(200).json(exercise);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error fetching exercise",
-        error,
-      });
+      return sendError(res, error, "Error fetching exercise");
     }
   }
 
@@ -42,10 +37,7 @@ export default class ExerciseController {
 
       return res.status(201).json(savedExercise);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error creating exercise",
-        error,
-      });
+      return sendError(res, error, "Error creating exercise");
     }
   }
 
@@ -65,10 +57,7 @@ export default class ExerciseController {
 
       return res.status(200).json(updatedExercise);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error updating exercise",
-        error,
-      });
+      return sendError(res, error, "Error updating exercise");
     }
   }
 
@@ -86,10 +75,7 @@ export default class ExerciseController {
         message: "Exercise deleted successfully",
       });
     } catch (error) {
-      return res.status(500).json({
-        message: "Error deleting exercise",
-        error,
-      });
+      return sendError(res, error, "Error deleting exercise");
     }
   }
 }

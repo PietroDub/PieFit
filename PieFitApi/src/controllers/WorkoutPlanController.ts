@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { sendError } from "../http/sendError.js";
 import { WorkoutPlanModel } from "../models/WorkoutPlan.js";
 
 export default class WorkoutPlanController {
@@ -11,10 +12,7 @@ export default class WorkoutPlanController {
 
       return res.status(200).json(workoutPlans);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error fetching workout plans",
-        error,
-      });
+      return sendError(res, error, "Error fetching workout plans");
     }
   }
 
@@ -32,10 +30,7 @@ export default class WorkoutPlanController {
 
       return res.status(200).json(workoutPlan);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error fetching workout plan",
-        error,
-      });
+      return sendError(res, error, "Error fetching workout plan");
     }
   }
 
@@ -47,10 +42,7 @@ export default class WorkoutPlanController {
 
       return res.status(201).json(savedWorkoutPlan);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error creating workout plan",
-        error,
-      });
+      return sendError(res, error, "Error creating workout plan");
     }
   }
 
@@ -70,10 +62,7 @@ export default class WorkoutPlanController {
 
       return res.status(200).json(updatedWorkoutPlan);
     } catch (error) {
-      return res.status(500).json({
-        message: "Error updating workout plan",
-        error,
-      });
+      return sendError(res, error, "Error updating workout plan");
     }
   }
 
@@ -93,10 +82,7 @@ export default class WorkoutPlanController {
         message: "Workout plan deleted successfully",
       });
     } catch (error) {
-      return res.status(500).json({
-        message: "Error deleting workout plan",
-        error,
-      });
+      return sendError(res, error, "Error deleting workout plan");
     }
   }
 }
