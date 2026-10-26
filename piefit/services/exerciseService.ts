@@ -7,8 +7,10 @@ export type Exercise = {
   active: boolean;
 };
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001")
-  .replace(/\/$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(
+  /\/$/,
+  "",
+);
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let response: Response;
@@ -25,40 +27,32 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error("Não foi possível conectar à API. Verifique se ela está disponível.");
   }
 
+  const data = (await response.json()) as T & { message?: string };
+
   if (!response.ok) {
-    throw new Error(`A API retornou um erro (${response.status}).`);
+    throw new Error(data.message ?? "Não foi possível completar a operação.");
   }
 
-  return response.json() as Promise<T>;
+  return data;
 }
 
-export function getExercises(): Promise<Exercise[]> {
-  return request<Exercise[]>("/exercises");
-}
+export const getExercises = () => request<Exercise[]>("/exercises");
 
-export function getExerciseById(id: string): Promise<Exercise> {
-  return request<Exercise>(`/exercises/${encodeURIComponent(id)}`);
-}
+export const getExerciseById = (id: string) => request<Exercise>(`/exercises/${id}`);
 
-export function createExercise(exercise: Omit<Exercise, "_id">): Promise<Exercise> {
-  return request<Exercise>("/exercises", {
+export const createExercise = (exercise: Omit<Exercise, "_id">) =>
+  request<Exercise>("/exercises", {
     method: "POST",
     body: JSON.stringify(exercise),
   });
-}
 
-export function updateExercise(
-  id: string,
-  exercise: Partial<Omit<Exercise, "_id">>,
-): Promise<Exercise> {
-  return request<Exercise>(`/exercises/${encodeURIComponent(id)}`, {
+export const updateExercise = (id: string, exercise: Partial<Omit<Exercise, "_id">>) =>
+  request<Exercise>(`/exercises/${id}`, {
     method: "PUT",
     body: JSON.stringify(exercise),
   });
-}
 
-export function deleteExercise(id: string): Promise<void> {
-  return request<void>(`/exercises/${encodeURIComponent(id)}`, {
+export const deleteExercise = (id: string) =>
+  request<{ message: string }>(`/exercises/${id}`, {
     method: "DELETE",
   });
-}
