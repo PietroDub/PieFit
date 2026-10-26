@@ -45,5 +45,9 @@
     "resolveJsonModule": true,
     "moduleResolution": "nodenext",
   },
-  "exclude": ["test"]
+  "exclude": ["test"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node ../PieFitApi/src/app.ts",
+  }
 }

@@ -1,7 +1,12 @@
+import "dotenv/config";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 
+import { connectDatabase } from "./Db/Conn.js";
 import { invalidRequest } from "./http/invalidRequest.js";
 import exerciseRoutes from "./routes/Exercise.routes.js";
 import workoutPlanRoutes from "./routes/WorkoutPlan.routes.js";
@@ -40,4 +45,26 @@ export function createApp() {
   );
 
   return app;
+}
+
+function isDirectRun(): boolean {
+  const entry = process.argv[1];
+
+  if (entry === undefined) {
+    return false;
+  }
+
+  return import.meta.url === pathToFileURL(path.resolve(entry)).href;
+}
+
+if (isDirectRun()) {
+  const port = Number(process.env.PORT ?? 3001);
+
+  await connectDatabase();
+
+  const app = createApp();
+
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
 }
