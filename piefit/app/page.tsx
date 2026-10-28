@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { WeekPlan } from "@/components/WeekPlan";
 import { useExercises } from "@/hooks/useExercises";
 import type { Exercise } from "@/services/exerciseService";
 
@@ -14,6 +15,7 @@ const emptyForm = {
 
 export default function Home() {
   const { exercises, isLoading, error, loadExercises, addExercise } = useExercises();
+  const [section, setSection] = useState<"exercises" | "week">("exercises");
   const [isAdding, setIsAdding] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
@@ -57,9 +59,39 @@ export default function Home() {
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 dark:text-blue-400">
             PieFit
           </p>
-          <h1 className="text-2xl font-bold tracking-tight">Exercícios</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {section === "exercises" ? "Exercícios" : "Semana"}
+          </h1>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSection("exercises")}
+              className={`h-10 rounded-xl text-sm font-semibold ${
+                section === "exercises"
+                  ? "bg-blue-600 text-white"
+                  : "border border-zinc-300 dark:border-zinc-700"
+              }`}
+            >
+              Exercícios
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection("week")}
+              className={`h-10 rounded-xl text-sm font-semibold ${
+                section === "week"
+                  ? "bg-blue-600 text-white"
+                  : "border border-zinc-300 dark:border-zinc-700"
+              }`}
+            >
+              Semana
+            </button>
+          </div>
         </header>
 
+        {section === "week" ? (
+          <WeekPlan exercises={exercises} />
+        ) : (
+          <>
         <main className="flex flex-1 flex-col px-4 py-4">
           {isLoading && (
             <p role="status" className="py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
@@ -203,6 +235,8 @@ export default function Home() {
             </button>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );
