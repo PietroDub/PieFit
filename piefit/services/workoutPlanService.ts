@@ -24,7 +24,7 @@ export const WEEKDAY_LABEL: Record<Weekday, string> = {
 };
 
 export type PlannedExercise = {
-  exercise: string | Exercise;
+  exercise: string | Exercise | null;
   order: number;
   sets: number;
   minReps?: number;
@@ -84,66 +84,132 @@ export type DayExerciseInput = {
 };
 
 export function exerciseId(exercise: PlannedExercise["exercise"]) {
-  return typeof exercise === "string" ? exercise : exercise._id;
+  if (typeof exercise === "string") {
+    return exercise;
+  }
+
+  return exercise?._id ?? "";
 }
 
 export function exerciseName(exercise: PlannedExercise["exercise"]) {
-  return typeof exercise === "string" ? "Exercício" : exercise.name;
+  if (exercise == null || typeof exercise === "string") {
+    return "Exercício";
+  }
+
+  return exercise.name;
 }
 
 export function planWithExercise(plan: WorkoutPlan, addition: DayExerciseInput): WorkoutPlanInput {
-  const days = plan.days.map((day) => ({
-    weekday: day.weekday,
-    name: day.name,
-    exercises: day.exercises.map((item, index) => toInputExercise(item, index)),
-  }));
+  return updateWeekday(plan, addition.weekday, (day) => {
+    const exercises = day?.exercises ?? [];
 
-  const planned = toAddedExercise(addition);
-  const dayIndex = days.findIndex((day) => day.weekday === addition.weekday);
-
-  if (dayIndex === -1) {
-    days.push({
-      weekday: addition.weekday,
+    return {
       name: addition.dayName,
-      exercises: [{ ...planned, order: 0 }],
-    });
-  } else {
-    const day = days[dayIndex];
+      exercises: [...exercises, plannedFromAddition(addition, exercises.length)],
+    };
+  });
+}
 
-    if (day) {
-      days[dayIndex] = {
-        weekday: day.weekday,
-        name: addition.dayName || day.name,
-        exercises: [...day.exercises, { ...planned, order: day.exercises.length }],
+export function planReplacingExercise(
+  plan: WorkoutPlan,
+  index: number,
+  addition: DayExerciseInput,
+): WorkoutPlanInput {
+  return updateWeekday(plan, addition.weekday, (day) => {
+    const exercises = day?.exercises ?? [];
+    const current = exercises[index];
+
+    if (!current) {
+      return {
+        name: addition.dayName,
+        exercises: [...exercises, plannedFromAddition(addition, exercises.length)],
       };
     }
-  }
+
+    return {
+      name: addition.dayName,
+      exercises: exercises.map((item, itemIndex) =>
+        itemIndex === index ? plannedFromAddition(addition, itemIndex, item) : item,
+      ),
+    };
+  });
+}
+
+export function planWithoutExercise(
+  plan: WorkoutPlan,
+  weekday: Weekday,
+  index: number,
+): WorkoutPlanInput {
+  return updateWeekday(plan, weekday, (day) => ({
+    name: day?.name ?? "",
+    exercises: (day?.exercises ?? []).filter((_, itemIndex) => itemIndex !== index),
+  }));
+}
+
+function updateWeekday(
+  plan: WorkoutPlan,
+  weekday: Weekday,
+  change: (day: WorkoutDay | undefined) => { name: string; exercises: PlannedExercise[] },
+): WorkoutPlanInput {
+  const existing = plan.days.find((day) => day.weekday === weekday);
+  const nextDay = change(existing);
+  const days = plan.days.filter((day) => day.weekday !== weekday);
+
+  days.push({
+    weekday,
+    name: nextDay.name,
+    exercises: nextDay.exercises,
+  });
 
   return {
     name: plan.name,
     description: plan.description,
     active: plan.active,
-    days,
+    days: days.map(dayToInput),
   };
 }
 
-function toAddedExercise(addition: DayExerciseInput): PlannedExerciseInput {
+function plannedFromAddition(
+  addition: DayExerciseInput,
+  order: number,
+  existing?: PlannedExercise,
+): PlannedExercise {
   return {
     exercise: addition.exerciseId,
-    order: 0,
+    order,
     sets: addition.sets,
-    notes: "",
+    notes: existing?.notes ?? "",
     ...(addition.minReps === undefined ? {} : { minReps: addition.minReps }),
     ...(addition.maxReps === undefined ? {} : { maxReps: addition.maxReps }),
     ...(addition.targetWeight === undefined ? {} : { targetWeight: addition.targetWeight }),
-    ...(addition.restSeconds === undefined ? {} : { restSeconds: addition.restSeconds }),
+    ...(addition.restSeconds !== undefined
+      ? { restSeconds: addition.restSeconds }
+      : existing?.restSeconds === undefined
+        ? {}
+        : { restSeconds: existing.restSeconds }),
   };
 }
 
-function toInputExercise(item: PlannedExercise, order: number): PlannedExerciseInput {
+function dayToInput(day: WorkoutDay): WorkoutDayInput {
   return {
-    exercise: exerciseId(item.exercise),
-    order,
+    weekday: day.weekday,
+    name: day.name,
+    exercises: day.exercises.flatMap((item) => {
+      const id = exerciseId(item.exercise);
+
+      if (!id) {
+        return [];
+      }
+
+      return [toInputExercise(item, id)];
+    }).map((item, order) => ({ ...item, order })),
+  };
+}
+
+function toInputExercise(item: PlannedExercise, id: string): PlannedExerciseInput {
+  return {
+    exercise: id,
+    order: item.order,
     sets: item.sets,
     notes: item.notes ?? "",
     ...(item.minReps === undefined ? {} : { minReps: item.minReps }),
