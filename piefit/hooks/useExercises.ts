@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   createExercise,
+  deleteExercise,
   getExercises,
+  updateExercise,
   type Exercise,
 } from "@/services/exerciseService";
 
@@ -40,5 +42,16 @@ export function useExercises() {
     return created;
   }, []);
 
-  return { exercises, isLoading, error, loadExercises, addExercise };
+  const saveExercise = useCallback(async (id: string, exercise: Omit<Exercise, "_id">) => {
+    const updated = await updateExercise(id, exercise);
+    setExercises((current) => current.map((item) => (item._id === id ? updated : item)));
+    return updated;
+  }, []);
+
+  const removeExercise = useCallback(async (id: string) => {
+    await deleteExercise(id);
+    setExercises((current) => current.filter((item) => item._id !== id));
+  }, []);
+
+  return { exercises, isLoading, error, loadExercises, addExercise, saveExercise, removeExercise };
 }

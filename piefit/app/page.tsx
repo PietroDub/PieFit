@@ -14,18 +14,54 @@ const emptyForm = {
 };
 
 export default function Home() {
-  const { exercises, isLoading, error, loadExercises, addExercise } = useExercises();
+  const { exercises, isLoading, error, loadExercises, addExercise, saveExercise, removeExercise } =
+    useExercises();
   const [section, setSection] = useState<"exercises" | "week">("exercises");
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const isEditing = editingId !== null;
+
+  function closeForm() {
+    setIsAdding(false);
+    setEditingId(null);
+    setForm(emptyForm);
+    setFormError(null);
+  }
+
+  function startCreate() {
+    setPendingDeleteId(null);
+    setDeleteError(null);
+    setEditingId(null);
+    setForm(emptyForm);
+    setFormError(null);
+    setIsAdding(true);
+  }
+
+  function startEdit(exercise: Exercise) {
+    setPendingDeleteId(null);
+    setDeleteError(null);
+    setIsAdding(false);
+    setEditingId(exercise._id);
+    setForm({
+      name: exercise.name,
+      muscleGroups: exercise.muscleGroups.join(", "),
+      equipment: exercise.equipment,
+      description: exercise.description,
+    });
+    setFormError(null);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
     setIsSaving(true);
 
+    const editing = exercises.find((item) => item._id === editingId);
     const exercise: Omit<Exercise, "_id"> = {
       name: form.name.trim(),
       description: form.description.trim(),
@@ -34,18 +70,42 @@ export default function Home() {
         .map((group) => group.trim())
         .filter(Boolean),
       equipment: form.equipment.trim(),
-      active: true,
+      active: editing?.active ?? true,
     };
 
     try {
-      await addExercise(exercise);
-      setForm(emptyForm);
-      setIsAdding(false);
+      if (editing) {
+        await saveExercise(editing._id, exercise);
+      } else {
+        await addExercise(exercise);
+      }
+      closeForm();
     } catch (requestError: unknown) {
       setFormError(
         requestError instanceof Error
           ? requestError.message
           : "Não foi possível salvar o exercício.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setDeleteError(null);
+    setIsSaving(true);
+
+    try {
+      await removeExercise(id);
+      if (editingId === id) {
+        closeForm();
+      }
+      setPendingDeleteId(null);
+    } catch (requestError: unknown) {
+      setDeleteError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível excluir o exercício.",
       );
     } finally {
       setIsSaving(false);
@@ -142,6 +202,60 @@ export default function Home() {
                         {exercise.equipment}
                       </p>
                     )}
+                    {pendingDeleteId === exercise._id ? (
+                      <div className="mt-3">
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                          Excluir este exercício?
+                        </p>
+                        {deleteError && (
+                          <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-300">
+                            {deleteError}
+                          </p>
+                        )}
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            disabled={isSaving}
+                            onClick={() => {
+                              setPendingDeleteId(null);
+                              setDeleteError(null);
+                            }}
+                            className="h-10 rounded-xl border border-zinc-300 text-sm font-semibold dark:border-zinc-700"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isSaving}
+                            onClick={() => void handleDelete(exercise._id)}
+                            className="h-10 rounded-xl border border-red-300 text-sm font-semibold text-red-700 disabled:opacity-60 dark:border-red-800 dark:text-red-300"
+                          >
+                            {isSaving ? "Excluindo..." : "Excluir"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(exercise)}
+                          className="h-10 rounded-xl border border-zinc-300 text-sm font-semibold dark:border-zinc-700"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeForm();
+                            setDeleteError(null);
+                            setPendingDeleteId(exercise._id);
+                          }}
+                          className="h-10 rounded-xl border border-red-300 text-sm font-semibold text-red-700 dark:border-red-800 dark:text-red-300"
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    )}
                   </article>
                 </li>
               ))}
@@ -150,8 +264,13 @@ export default function Home() {
         </main>
 
         <div className="sticky bottom-0 mt-auto border-t border-zinc-200 bg-zinc-100/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-          {isAdding ? (
+          {isAdding || isEditing ? (
             <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-3">
+              {isEditing && (
+                <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Editando {form.name.trim() || "exercício"}
+                </p>
+              )}
               <label className="flex flex-col gap-1 text-sm font-medium">
                 Nome
                 <input
@@ -208,10 +327,7 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsAdding(false);
-                    setFormError(null);
-                  }}
+                  onClick={closeForm}
                   className="h-12 rounded-xl border border-zinc-300 font-semibold dark:border-zinc-700"
                 >
                   Cancelar
@@ -228,7 +344,7 @@ export default function Home() {
           ) : (
             <button
               type="button"
-              onClick={() => setIsAdding(true)}
+              onClick={startCreate}
               className="h-12 w-full rounded-xl bg-blue-600 text-base font-semibold text-white"
             >
               Adicionar exercício
